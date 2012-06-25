@@ -29,7 +29,7 @@ class SystemUpdate
     {
         $this->getConsole()->info(sprintf('Running query "%s"...', 
                                           substr(trim($query), 0, 19)));
-                                          
+        
         $this->disableForeignKeyChecks();
         
         $result    = $this->adapter->save($query, $params);

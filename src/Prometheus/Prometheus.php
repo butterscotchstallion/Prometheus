@@ -53,8 +53,12 @@ class Prometheus
                                 
                                 include $f;
                                 
-                                $update = new $class();
-                                $result = $update->run();
+                                try {
+                                    $update = new $class();
+                                    $result = $update->run();
+                                } catch (Exception $e) {
+                                    $this->console->error($e->getMessage());
+                                }
                                 
                                 if ($result) {
                                     $this->console->ok(sprintf('Processed "%s" successfully!', $class));
