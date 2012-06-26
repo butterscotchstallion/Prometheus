@@ -23,7 +23,7 @@ class AddCats extends SystemUpdate implements SystemUpdateInterface
         if ($this->hasTable($table) === false) {
             $this->getConsole()->info(sprintf('Adding table "%s"', $table));
             
-            $result = $this->save('CREATE TABLE `prometheus`.`cats` (
+            $result = $this->save('CREATE TABLE `cats` (
                                       `id` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
                                       `breed` VARCHAR(45) NOT NULL,
                                       PRIMARY KEY (`id`)

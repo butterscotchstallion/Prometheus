@@ -8,6 +8,8 @@ namespace Prometheus;
 class Prometheus
 {
     private $console;
+    private $success          = false;
+    private $updatesProcessed = 0;
     
     /**
      * @param array $connectionInfo (optional, but necessary for db updates)
@@ -22,9 +24,10 @@ class Prometheus
     /**
      * Runs all upgrades in specified directories
      * @param array $directories
+     * @return bool
      *
      */
-    function run($directories)
+    function run(array $directories)
     {
         if ($directories) {
             foreach ($directories as $dir) {
@@ -54,25 +57,42 @@ class Prometheus
                                 include $f;
                                 
                                 try {
-                                    $update = new $class();
-                                    $result = $update->run();
+                                    // Initialize update and run()
+                                    if (class_exists($class)) {
+                                        $update = new $class();
+                                        $result = $update->run();
+                                        
+                                        if ($result) {
+                                            $this->updatesProcessed++;                                            
+                                            $this->console->ok(sprintf('Processed "%s" successfully!', $class));
+                                        } else {
+                                            $this->abort(sprintf('Error processing "%s"', $class));
+                                        }
+                                    
+                                    } else {
+                                        $this->abort(sprintf('Class "%s" does not exist', $class));
+                                    }
+                                    
                                 } catch (Exception $e) {
-                                    $this->console->error($e->getMessage());
-                                }
-                                
-                                if ($result) {
-                                    $this->console->ok(sprintf('Processed "%s" successfully!', $class));
-                                } else {
-                                    $this->console->error(sprintf('Error processing "%s"', $class));
-                                }
+                                    $this->abort($e->getMessage());
+                                }                                
                                 
                             } else {
                                 $this->console->warn(sprintf('Could not read "%s"', $f));
                             }
                         }
                         
+                        // If we've gotten this far, everything is cool
+                        $this->success = true;
+                        
+                        $this->console->log(sprintf("[OK] Processed %d updates successfully", 
+                                                    $this->updatesProcessed),
+                                            'bold_cyan');
+                        
+                        return $this->success;
+                        
                     } else {
-                        $this->console->warn(sprintf('No files found in %s', $dir));
+                        $this->abort(sprintf('No files found in %s', $dir));
                     }
                     
                 } else {
@@ -87,6 +107,12 @@ class Prometheus
     
     function abort($msg)
     {
+        $this->success = false;
         $this->console->error($msg);
+    }
+    
+    function getProcessedUpdates()
+    {
+        return $this->updatesProcessed;
     }
 }
