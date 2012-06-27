@@ -15,6 +15,8 @@ class Prometheus
     private $updatesProcessed = 0;
     private $logPath;
     private $logger;
+    private $dumper;
+    private $backupPath;
     
     /**
      * @param array $connectionInfo (optional, but necessary for db updates)
@@ -24,6 +26,9 @@ class Prometheus
     {
         $this->console        = new Console\Console();
         $this->connectionInfo = $connectionInfo;
+        $this->dumper         = new Adapter\MySQL\Dumper();
+        
+        $this->printIntroText();
     }
     
     /**
@@ -34,7 +39,7 @@ class Prometheus
      */
     function run(array $directories)
     {
-        $this->printIntroText();
+        $this->backupDatabase();
         
         if ($directories) {
             foreach ($directories as $dir) {
@@ -115,7 +120,26 @@ class Prometheus
     }
     
     /**
-     * OPrints intro message
+     * Use Dumper to back up db
+     *
+     */
+    function backupDatabase()
+    {
+        if ($this->backupPath) {
+            $result = $this->dumper->dump($this->backupPath);
+            
+            if ($result) {
+                $this->ok(sprintf('Backup created: %s (%s)', 
+                          $result['filename'],
+                          $result['size']));
+            } else {
+                $this->error('Error creating backup!');
+            }
+        }
+    }
+    
+    /**
+     * Prints intro message
      *
      */
     function printIntroText()
@@ -176,6 +200,16 @@ class Prometheus
         $handler      = new StreamHandler($this->logPath, 
                             Logger::WARNING);
         $this->logger->pushHandler($handler);
+    }
+    
+    /**
+     * Enables db backup
+     * @param string $path - full path to log
+     *
+     */
+    function enableDatabaseBackup($path)
+    {   
+        $this->backupPath = $path;
     }
     
     function warn($msg)
