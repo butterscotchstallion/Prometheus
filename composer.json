@@ -1,6 +1,7 @@
 {
     "require": {
-        "symfony/class-loader": "2.1.*"
+        "symfony/class-loader": "2.1.*",
+        "monolog/monolog": ">=1.0.0"
     },
     
     "autoload": {

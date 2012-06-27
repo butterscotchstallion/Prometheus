@@ -5,11 +5,16 @@
  */
 namespace Prometheus;
 
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+
 class Prometheus
 {
     private $console;
     private $success          = false;
     private $updatesProcessed = 0;
+    private $logPath;
+    private $logger;
     
     /**
      * @param array $connectionInfo (optional, but necessary for db updates)
@@ -29,16 +34,19 @@ class Prometheus
      */
     function run(array $directories)
     {
+        $this->printIntroText();
+        
         if ($directories) {
             foreach ($directories as $dir) {
                 if (is_readable($dir)) {
                     $files = glob(sprintf('%s/*.php', $dir));
                     
                     if ($files) {
-                        $this->console->ok(sprintf('Processing %s (%d files)', 
+                        $this->ok(sprintf('Processing %s (%d files)', 
                                                    basename($dir), 
                                                    count($files)));                        
                         
+                        $totalUpdates = 0;
                         foreach ($files as $f) {
                             // Log current update
                             $filename = basename($f);
@@ -52,19 +60,20 @@ class Prometheus
                             // Run!
                             if (is_readable($f)) {
                                 
-                                $this->console->info(sprintf('Running %s', $class));
+                                $this->info(sprintf('Running %s', $class));
                                 
                                 include $f;
                                 
                                 try {
                                     // Initialize update and run()
                                     if (class_exists($class)) {
+                                        $totalUpdates++;
                                         $update = new $class();
                                         $result = $update->run();
                                         
                                         if ($result) {
                                             $this->updatesProcessed++;                                            
-                                            $this->console->ok(sprintf('Processed "%s" successfully!', $class));
+                                            $this->ok(sprintf('Processed "%s" successfully!', $class));
                                         } else {
                                             $this->abort(sprintf('Error processing "%s"', $class));
                                         }
@@ -78,16 +87,16 @@ class Prometheus
                                 }                                
                                 
                             } else {
-                                $this->console->warn(sprintf('Could not read "%s"', $f));
+                                $this->warn(sprintf('Could not read "%s"', $f));
                             }
                         }
                         
                         // If we've gotten this far, everything is cool
                         $this->success = true;
                         
-                        $this->console->log(sprintf("[OK] Processed %d updates successfully", 
-                                                    $this->updatesProcessed),
-                                            'bold_cyan');
+                        $this->ok(sprintf("Processed %d/%d updates successfully", 
+                                            $this->updatesProcessed,
+                                            $totalUpdates));
                         
                         return $this->success;
                         
@@ -96,7 +105,7 @@ class Prometheus
                     }
                     
                 } else {
-                    $this->console->warn(sprintf('Could not read "%s"', $dir));
+                    $this->warn(sprintf('Could not read "%s"', $dir));
                 }
             }
             
@@ -105,14 +114,113 @@ class Prometheus
         }
     }
     
+    /**
+     * OPrints intro message
+     *
+     */
+    function printIntroText()
+    {
+        $this->printBorder();
+        $this->console->log(sprintf('* Prometheus: a tool for upgrading databases %s *', 
+                            str_repeat(' ', 8)),
+                            'yellow');
+        $this->printBorder();
+    }
+    
+    /**
+     * Prints a pretty ascii border around the text
+     * @param int $length in characters
+     *
+     */
+    function printBorder($length = 55)
+    {
+        $borderChar = '*';
+        
+        foreach (range(0, $length - 1) as $key => $chr) {
+            if ($key % 2) {
+                $color = 'yellow';
+            } else {
+                $color = 'red';
+            }
+            
+            $this->console->log($borderChar, $color, false);
+        }
+        
+        $this->console->log('');
+    }
+    
+    /**
+     * Indicate failure by setting $this->success to false, and log
+     * the msg in red
+     *
+     */
     function abort($msg)
     {
+        if ($this->logger) {
+            $this->logger->addError($msg);
+        }
+        
         $this->success = false;
         $this->console->error($msg);
     }
     
-    function getProcessedUpdates()
+    /**
+     * Enables logging
+     * @param string $path - full path to log
+     *
+     */
+    function enableLogging($path)
+    {   
+        // Set up logger
+        $this->logger = new Logger('Prometheus');    
+        $handler      = new StreamHandler($this->logPath, 
+                            Logger::WARNING);
+        $this->logger->pushHandler($handler);
+    }
+    
+    function warn($msg)
     {
-        return $this->updatesProcessed;
+        if ($this->logger) {
+            $this->logger->addWarning($msg);
+        }
+        
+        return $this->console->warn($msg);
+    }
+    
+    function ok($msg)
+    {
+        if ($this->logger) {
+            $this->logger->info($msg);
+        }
+        
+        return $this->console->ok($msg);
+    }
+    
+    function info($msg)
+    {
+        if ($this->logger) {
+            $this->logger->info($msg);
+        }
+        
+        return $this->console->info($msg);
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
