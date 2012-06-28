@@ -5,8 +5,9 @@
  */
 namespace Prometheus;
 
-use Monolog\Logger;
-use Monolog\Handler\StreamHandler;
+use Monolog\Logger,
+    Monolog\Handler\StreamHandler,
+    Exception;
 
 class Prometheus
 {
@@ -16,7 +17,13 @@ class Prometheus
     private $logPath;
     private $logger;
     private $dumper;
+    
+    // Path
     private $backupPath;
+    
+    // Full path to completed backup
+    private $completedBackupPath;
+    private $removeBackupOnSuccess = true;
     
     /**
      * @param array $connectionInfo (optional, but necessary for db updates)
@@ -99,6 +106,16 @@ class Prometheus
                         // If we've gotten this far, everything is cool
                         $this->success = true;
                         
+                        if ($this->removeBackupOnSuccess) {                            
+                            $result = $this->removeBackup();
+                            
+                            if ($result) {
+                                $this->info('Removed backup');
+                            } else {
+                                $this->warn('Error Removing backup!');
+                            }
+                        }
+                        
                         $this->ok(sprintf("Processed %d/%d updates successfully", 
                                             $this->updatesProcessed,
                                             $totalUpdates));
@@ -127,6 +144,7 @@ class Prometheus
     {
         if ($this->backupPath) {
             $result = $this->dumper->dump($this->backupPath);
+            $this->completedBackupPath = $result['filename'];
             
             if ($result) {
                 $this->ok(sprintf('Backup created: %s (%s)', 
@@ -136,6 +154,17 @@ class Prometheus
                 $this->error('Error creating backup!');
             }
         }
+    }
+    
+    /**
+     * Remove backup
+     *
+     */
+    function removeBackup()
+    {
+        $result = unlink($this->completedBackupPath);
+
+        return $result && is_readable($this->completedBackupPath) === false;
     }
     
     /**
@@ -237,6 +266,11 @@ class Prometheus
         }
         
         return $this->console->info($msg);
+    }
+    
+    function disableRemoveBackupOnSuccess()
+    {
+        $this->removeBackupOnSuccess = false;
     }
 }
 
