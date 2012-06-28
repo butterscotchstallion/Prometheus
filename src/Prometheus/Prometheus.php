@@ -143,7 +143,7 @@ class Prometheus
     function backupDatabase()
     {
         if ($this->backupPath) {
-            $result = $this->dumper->dump($this->backupPath);
+            $result                    = $this->dumper->dump($this->backupPath);
             $this->completedBackupPath = $result['filename'];
             
             if ($result) {
