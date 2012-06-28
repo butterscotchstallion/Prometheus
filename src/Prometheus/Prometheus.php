@@ -26,7 +26,7 @@ class Prometheus
     private $removeBackupOnSuccess = true;
     
     /**
-     * @param array $connectionInfo (optional, but necessary for db updates)
+     * @param array $connectionInfo
      *
      */
     function __construct($connectionInfo = array())
