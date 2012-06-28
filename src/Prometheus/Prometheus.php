@@ -224,11 +224,17 @@ class Prometheus
      */
     function enableLogging($path)
     {   
-        // Set up logger
-        $this->logger = new Logger('Prometheus');    
-        $handler      = new StreamHandler($this->logPath, 
-                            Logger::WARNING);
-        $this->logger->pushHandler($handler);
+        try {
+            // Set up logger
+            $this->logger = new Logger('Prometheus');   
+            
+            // Issue #5 - Logger does not log
+            // Fixed by removing second argument to StreamHandler
+            $handler      = new StreamHandler($path);
+            $this->logger->pushHandler($handler);
+        } catch (Exception $e) {
+            $this->error(sprintf('Failed to initialize logger: %s', $e->getMessage()));
+        }
     }
     
     /**
