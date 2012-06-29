@@ -6,6 +6,10 @@ Thus, Prometheus was born. After I automated this task, it was like fire was giv
 
 I also wrote about my trials and errors here: http://prgmrbill.com/2012/03/database-migrations-php-mysql/
 
+Screenshot
+-----
+![alt text](https://github.com/prgmrbill/Prometheus/blob/master/prometheus.png "Screenshot")
+
 Usage
 -----
 ```php
