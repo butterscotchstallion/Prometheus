@@ -1,3 +1,6 @@
+About
+-----
+
 Prometheus is a command-line PHP tool to make automated database changes born from the misery and strife of doing it manually
 
 One of my very first long-running projects involved periodically updating the database and code, and as you might imagine, doing it manually eventually became quite a burden.
@@ -6,9 +9,22 @@ Thus, Prometheus was born. After I automated this task, it was like fire was giv
 
 I also wrote about my trials and errors here: http://prgmrbill.com/2012/03/database-migrations-php-mysql/
 
+How does it work?
+-----
+Prometheus looks for PHP files in directories you specify. It includes each file and runs the code
+inside of it. Because the updates are PHP, they can analyze the database structure and determine
+if a particular update has already been applied. Prometheus supplies helper methods such as hasTable,
+hasColumn, hasIndex, etc. The end result is that you can run updates repeatedly without error.
+Without this logic, some queries would fail (like CREATE TABLE...). This is why one cannot simply
+run SQL files.
+
 Screenshot
 -----
 ![alt text](https://github.com/prgmrbill/Prometheus/blob/master/prometheus.png?raw=true "Screenshot")
+
+Requirements
+-----
+Prometheus is written in PHP and uses Composer (http://getcomposer.org) to manage its dependencies.   
 
 Usage
 -----

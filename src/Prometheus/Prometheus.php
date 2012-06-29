@@ -262,7 +262,7 @@ class Prometheus
     function printIntroText()
     {
         $this->printBorder();
-        $this->console->log(sprintf('* Prometheus: a tool for upgrading databases %s *', 
+        $this->console->log(sprintf('* Prometheus: a tool for automated database changes %s *', 
                             str_repeat(' ', 8)),
                             'yellow');
         $this->printBorder();
