@@ -28,7 +28,7 @@ class Prometheus
     // Will send report if there is something
     // in this array
     private $reportRecipients      = array();
-    
+
     /**
      * @param array $connectionInfo
      *
@@ -53,6 +53,8 @@ class Prometheus
         $this->backupDatabase();
         
         if ($directories) {
+            $start = new \Datetime();
+            
             foreach ($directories as $dir) {
                 if (is_readable($dir)) {
                     $files = glob(sprintf('%s/*.php', $dir));
@@ -123,9 +125,17 @@ class Prometheus
                         
                         // Send report
                         if ($this->reportRecipients) {
-                            $result = $this->sendReport(array('okCount' => $this->updatesProcessed,
-                                                              'total'   => $totalUpdates));
-                                                              
+                            // Get total duration of upgrade
+                            $end      = new \Datetime();
+                            $interval = $start->diff($end);
+                            $duration = $interval->format("%h hours %i minutes %s seconds");
+                            
+                            $this->info('Sending report...');
+                            
+                            $result   = $this->sendReport(array('okCount'  => $this->updatesProcessed,
+                                                                'total'    => $totalUpdates,
+                                                                'duration' => $duration));
+                                          
                             if ($result) {
                                 $this->ok('Report sent successfully');
                             } else {
@@ -135,9 +145,7 @@ class Prometheus
                         
                         $this->ok(sprintf("Processed %d/%d updates successfully", 
                                             $this->updatesProcessed,
-                                            $totalUpdates));
-                        
-                        return $this->success;
+                                            $totalUpdates));                        
                         
                     } else {
                         $this->abort(sprintf('No files found in %s', $dir));
@@ -151,6 +159,8 @@ class Prometheus
         } else {
             $this->abort('No directories specified.');
         }
+        
+        return $this->success;                       
     }
     
     /**
@@ -171,8 +181,16 @@ class Prometheus
         }
         
         try {
+            // Set up/log body
+            $body = sprintf('%d/%d updates processed successfully in %s',
+                              $info['okCount'],
+                              $info['total'],
+                              $info['duration']);
+            
+            $this->logger->addInfo($body);
+            
             $message = \Swift_Message::newInstance()
-
+            
             // Give the message a subject
             ->setSubject('Prometheus Upgrade Report')
 
@@ -183,10 +201,8 @@ class Prometheus
             ->setTo($this->reportRecipients)
 
             // Give it a body
-            ->setBody(sprintf('%d/%d updates processed successfully',
-                              $info['okCount'],
-                              $info['total']));
-
+            ->setBody($body);
+            
             // And optionally an alternative body
             //->addPart('<q>Here is the message itself</q>', 'text/html')
 

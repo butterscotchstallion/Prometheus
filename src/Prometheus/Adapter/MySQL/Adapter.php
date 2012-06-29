@@ -64,7 +64,7 @@ class Adapter
     {
         $stmt = $this->getStatement($query, $params);
         
-        return $stmt->fetch($query);
+        return $stmt->fetch();
     }
     
     /**
@@ -77,7 +77,7 @@ class Adapter
     {
         $stmt = $this->getStatement($query, $params);
         
-        return $stmt->fetchAll($query);
+        return $stmt->fetchAll();
     }
     
     /**

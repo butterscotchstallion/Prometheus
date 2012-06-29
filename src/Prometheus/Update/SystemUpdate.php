@@ -12,17 +12,18 @@ use Prometheus\Console\Console,
 class SystemUpdate
 {
     private $console;
+    private $adapter;
     
     public function __construct()
     {
         $this->console    = new Console();
         $this->adapter    = new Adapter();
-        $this->connection = $this->adapter->getConnection();
+        $this->connection = $this->getAdapter()->getConnection();
     }
     
     function disableForeignKeyChecks()
     {
-        $this->save('SET foreign_key_checks = 0');
+        $this->getAdapter()->save('SET foreign_key_checks = 0');
     }
     
     function save($query, $params = array()) 
@@ -32,13 +33,13 @@ class SystemUpdate
         
         $this->disableForeignKeyChecks();
         
-        $result    = $this->adapter->save($query, $params);
+        $result    = $this->getAdapter()->save($query, $params);
         $lastError = Adapter::getLastError();
         
         if (!$result || $lastError) {           
             $this->getConsole()->error($lastError);
         } else {
-            $this->getConsole()->ok(sprintf("Result: %s", $result));
+            //$this->getConsole()->ok(sprintf("Result: %s", $result));
         }
         
         return $result;
@@ -133,5 +134,10 @@ class SystemUpdate
         } else {
             throw new \RuntimeException('Connection unavailable!');
         }
+    }
+    
+    function getAdapter()
+    {
+        return $this->adapter;
     }
 }

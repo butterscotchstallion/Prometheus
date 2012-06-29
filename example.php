@@ -7,6 +7,7 @@
 error_reporting(-1);
 date_default_timezone_set('America/New_York');
 ini_set('error_log', realpath('logs/error.log'));
+ini_set('display_errors', true);
 
 // Prometheus uses Composer (http://getcomposer.org) to manage its
 // dependencies. If you use it, it will automatically generate this
