@@ -25,6 +25,10 @@ class Prometheus
     private $completedBackupPath;
     private $removeBackupOnSuccess = true;
     
+    // Will send report if there is something
+    // in this array
+    private $reportRecipients      = array();
+    
     /**
      * @param array $connectionInfo
      *
@@ -106,6 +110,7 @@ class Prometheus
                         // If we've gotten this far, everything is cool
                         $this->success = true;
                         
+                        // Remove backup
                         if ($this->removeBackupOnSuccess) {                            
                             $result = $this->removeBackup();
                             
@@ -113,6 +118,18 @@ class Prometheus
                                 $this->info('Removed backup');
                             } else {
                                 $this->warn('Error Removing backup!');
+                            }
+                        }
+                        
+                        // Send report
+                        if ($this->reportRecipients) {
+                            $result = $this->sendReport(array('okCount' => $this->updatesProcessed,
+                                                              'total'   => $totalUpdates));
+                                                              
+                            if ($result) {
+                                $this->ok('Report sent successfully');
+                            } else {
+                                $this->error('Error sending report!');
                             }
                         }
                         
@@ -133,6 +150,61 @@ class Prometheus
             
         } else {
             $this->abort('No directories specified.');
+        }
+    }
+    
+    /**
+     * Send report 
+     * @param array $info
+     * @return bool
+     */
+    function sendReport($info)
+    {
+        // Don't try to send mail unless these are valid
+        $user = defined('MAIL_USER')     ? MAIL_USER     : '';
+        $pw   = defined('MAIL_PASSWORD') ? MAIL_PASSWORD : '';
+        
+        // Bail out
+        if (!$user || !$pw) {
+            $this->warn('Mail user/password not set. Cannot send report.');
+            return false;
+        }
+        
+        try {
+            $message = \Swift_Message::newInstance()
+
+            // Give the message a subject
+            ->setSubject('Prometheus Upgrade Report')
+
+            // Set the From address with an associative array
+            ->setFrom(array('prometheus@prgmrbill.com' => 'Prometheus'))
+
+            // Set the To addresses with an associative array
+            ->setTo($this->reportRecipients)
+
+            // Give it a body
+            ->setBody(sprintf('%d/%d updates processed successfully',
+                              $info['okCount'],
+                              $info['total']));
+
+            // And optionally an alternative body
+            //->addPart('<q>Here is the message itself</q>', 'text/html')
+
+            // Optionally add any attachments
+            //->attach(Swift_Attachment::fromPath('my-document.pdf'));
+            $transport = \Swift_SmtpTransport::newInstance('smtp.gmail.com', 465, "ssl")
+                        ->setUsername($user)
+                        ->setPassword($pw);
+            
+            $mailer    = \Swift_Mailer::newInstance($transport);
+            
+            $result = $mailer->send($message);
+            
+            return $result;
+            
+        } catch (\Swift_TransportException $e) {
+            $this->abort(sprintf('Mailer: %s', $e->getMessage()));
+            return false;
         }
     }
     
@@ -277,6 +349,22 @@ class Prometheus
     function disableRemoveBackupOnSuccess()
     {
         $this->removeBackupOnSuccess = false;
+    }
+    
+    /**
+     * Add emails to this array to receive a report
+     * once the upgrade has completed
+     * @param array $recipients
+     *
+     */
+    function setReportRecipients(array $recipients) 
+    {
+        $this->reportRecipients = $recipients;
+    }
+    
+    function getReportRecipients()
+    {
+        return $this->reportRecipients;
     }
 }
 

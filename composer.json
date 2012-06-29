@@ -1,7 +1,8 @@
 {
     "require": {
         "symfony/class-loader": "2.1.*",
-        "monolog/monolog": ">=1.0.0"
+        "monolog/monolog": ">=1.0.0",
+        "swiftmailer/swiftmailer": ">=4.1"
     },
     
     "autoload": {

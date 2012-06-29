@@ -29,6 +29,11 @@ $p->enableLogging(realpath('./logs/Prometheus.log'));
 // Pass backup path to enable database backups
 $p->enableDatabaseBackup(getcwd());
 
+// Pass an array of emails to receive mail when upgrades are completed
+// Note: this uses a gmail account to send mail. Set MAIL_USER and MAIL_PASSWORD
+// in the config.
+$p->setReportRecipients(array('bill@prgmrbill.com'));
+
 // Pass an array of directories which contain PHP files (updates)
 $p->run(array(sprintf('%s/src/Prometheus/Test/Fixture/Updates', __DIR__)));
 
