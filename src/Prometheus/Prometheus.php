@@ -195,7 +195,7 @@ class Prometheus
             ->setSubject('Prometheus Upgrade Report')
 
             // Set the From address with an associative array
-            ->setFrom(array('prometheus@prgmrbill.com' => 'Prometheus'))
+            ->setFrom(array(MAIL_FROM_ADDR => MAIL_FROM_NAME))
 
             // Set the To addresses with an associative array
             ->setTo($this->reportRecipients)
